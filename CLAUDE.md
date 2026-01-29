@@ -79,7 +79,53 @@ git add . && git commit -m "Update submodules"
 git push
 ```
 
+## Parallel Agent Workflow (CRITICAL for avoiding merge conflicts)
+
+When launching multiple agents in parallel on the same repo:
+
+### Problem
+Agents working on sequential milestones (M1 → M2 → M3 → M4) create branches from outdated bases, causing merge conflicts when PRs are merged in order.
+
+### Solution: Sequential Branching Strategy
+1. **Merge PRs immediately after each milestone** before starting the next
+2. **Or** have agents create branches from the previous feature branch (not main):
+   ```bash
+   # M2 branches from M1, not main
+   git checkout feature/m1-foundation
+   git checkout -b feature/m2-terrain
+   ```
+3. **Rebase before merging** if main has changed:
+   ```bash
+   git fetch origin && git rebase origin/main
+   git push --force-with-lease origin feature/<branch>
+   ```
+
+### Files That Commonly Conflict
+- `Sources/Models/Messages.swift` - Shared data models
+- `Sources/Scene/TerrainScene.swift` - Main scene coordinator
+- `Sources/WebSocketClient.swift` - Event handling
+- `app/schemas/*.py` - Shared schemas
+
+### Best Practices
+1. **One agent per file** - Avoid two agents modifying the same file
+2. **Define interfaces first** - Agree on schemas/models before parallel work
+3. **Small, focused PRs** - Merge frequently to reduce conflict surface
+4. **Coordinate shared files** - If both agents need to modify Messages.swift, one should wait
+
 ## API Reference
 - Swagger: http://localhost:8000/docs
 - Health: http://localhost:8000/health
 - Items: http://localhost:8000/items (from database)
+
+## Performance Notes
+
+### Filesystem Scanning
+- Always filter `node_modules`, `.git`, build directories, etc. (see `EXCLUDED_DIRS` in filesystem.py)
+- Use `os.walk()`'s filenames directly - don't re-scan with `iterdir()`
+- Limit depth to 5 levels for UI responsiveness
+
+### SceneKit Performance
+- Never create thousands of nodes synchronously
+- Use async batching with `Task.yield()` between batches
+- Keep batch size around 50 nodes to balance speed vs responsiveness
+- Mark scene update methods with `@MainActor` for Swift concurrency
