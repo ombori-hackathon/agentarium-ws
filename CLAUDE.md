@@ -57,12 +57,25 @@ Available in `.claude/agents/`:
 
 ## Development Workflow
 
+### Before Starting ANY Work
+1. **Check open PRs** - Run `gh pr list --state open` in each repo
+2. **Decide PR status** - Merge or close open PRs before creating new work
+3. **Start from clean main** - Ensure `git status` shows clean working directory
+
 ### New Features (MANDATORY)
 1. **Plan mode first** - Create spec in `specs/YYYY-MM-DD-feature-name.md`
-2. **Write tests** - TDD: tests before implementation
-3. **Implement** - Use coder agents (can run in parallel)
-4. **Review** - Use reviewer agent
-5. **Commit** - Submodules first, then workspace
+2. **Use specialized agents** - Spawn `python-coder` and `swift-coder` via Task tool
+3. **Create feature branches** - ALWAYS work on feature branches, NEVER commit to main
+4. **Write tests** - TDD: tests before implementation
+5. **Create PRs** - Use `gh pr create` for each submodule
+6. **Review** - Use reviewer agent
+7. **Merge PRs** - Merge submodule PRs before updating workspace
+
+### Mandatory Agent Usage
+- **python-coder**: ALL Python/FastAPI work in `services/api/`
+- **swift-coder**: ALL Swift/SwiftUI work in `apps/macos-client/`
+- **reviewer**: Before merging any significant PR
+- Do NOT implement features directly - spawn the appropriate agent
 
 ### Git Workflow (use `gh` CLI, not GitHub web)
 Always use feature branches and `gh pr create`:
